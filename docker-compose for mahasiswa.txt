@@ -1,0 +1,72 @@
+services:
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        image: mahasiswaservice
+        container_name: laravel-mahasiswaservice
+        restart: unless-stopped
+        working_dir: /var/www/html
+        volumes:
+            - .:/var/www/html
+        networks:
+            - laravel-net
+        depends_on:
+            - db
+            - redis
+        ports:
+            - 9070:80
+        environment:
+            DB_HOST: db
+            DB_DATABASE: db_mahasiswa_iae
+            DB_USERNAME: root
+            DB_PASSWORD: root
+            REDIS_HOST: redis
+            REDIS_CLIENT: predis
+            QUEUE_CONNECTION: database
+        command: >
+            sh -c "php artisan migrate --force && apache2-foreground"
+
+    db:
+        image: mysql:8.0
+        container_name: mysql-mahasiswa-db
+        restart: unless-stopped
+        environment:
+            MYSQL_DATABASE: db_mahasiswa_iae
+            MYSQL_ROOT_PASSWORD: root
+        volumes:
+            - mysql-data:/var/lib/mysql
+        networks:
+            - laravel-net
+
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin
+        container_name: phpmyadmin-mahasiswa
+        restart: unless-stopped
+        environment:
+            PMA_HOST: db
+            PMA_PORT: 3306
+            PMA_USER: root
+            PMA_PASSWORD: root
+            UPLOAD_LIMIT: 100M
+        depends_on:
+            - db
+        ports:
+            - 9080:80
+        networks:
+            - laravel-net
+
+    redis:
+        image: redis:alpine
+        container_name: redis-mahasiswa
+        restart: unless-stopped
+        networks:
+            - laravel-net
+
+
+networks:
+    laravel-net:
+
+
+volumes:
+    mysql-data:

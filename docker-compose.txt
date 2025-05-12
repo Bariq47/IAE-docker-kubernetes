@@ -1,0 +1,125 @@
+version: "3.8"
+
+services:
+  mahasiswaservice:
+    build:
+      context: ./mahasiswaservice
+      dockerfile: Dockerfile
+    image: mahasiswaservice
+    container_name: laravel-mahasiswaservice
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./mahasiswaservice:/var/www/html
+    networks:
+      - laravel-net
+    ports:
+      - 9070:80
+    environment:
+      DB_HOST: mahasiswa-db
+      DB_DATABASE: db_mahasiswa_iae
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      REDIS_HOST: redis
+      REDIS_CLIENT: predis
+      QUEUE_CONNECTION: database
+    depends_on:
+      - mahasiswa-db
+      - redis
+    command: >
+      sh -c "php artisan migrate --force && apache2-foreground"
+
+  mahasiswa-db:
+    image: mysql:8.0
+    container_name: mysql-mahasiswa-db
+    environment:
+      MYSQL_DATABASE: db_mahasiswa_iae
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - mysql-mahasiswa:/var/lib/mysql
+    networks:
+      - laravel-net
+
+  nilaiService:
+    build:
+      context: ./nilaiService
+      dockerfile: Dockerfile
+    image: nilaiservice
+    container_name: laravel-nilaiservice
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./nilaiService:/var/www/html
+    networks:
+      - laravel-net
+    ports:
+      - 9071:80
+    environment:
+      DB_HOST: nilai-db
+      DB_DATABASE: db_nilai_iae
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      REDIS_HOST: redis
+      REDIS_CLIENT: predis
+      QUEUE_CONNECTION: database
+    depends_on:
+      - nilai-db
+      - redis
+      - mahasiswaservice
+    command: >
+      sh -c "php artisan migrate --force && apache2-foreground"
+      
+  nilai-db:
+    image: mysql:8.0
+    container_name: mysql-nilai-db
+    environment:
+      MYSQL_DATABASE: db_nilai_iae
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - mysql-nilai:/var/lib/mysql
+    networks:
+      - laravel-net
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    networks:
+      - laravel-net
+
+  phpmyadmin-mahasiswa:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin-mahasiswa
+    ports:
+      - 9080:80
+    environment:
+      PMA_HOST: mahasiswa-db
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: root
+    depends_on:
+      - mahasiswa-db
+    networks:
+      - laravel-net
+
+  phpmyadmin-nilai:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin-nilai
+    ports:
+      - 9081:80
+    environment:
+      PMA_HOST: nilai-db
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: root
+    depends_on:
+      - nilai-db
+    networks:
+      - laravel-net
+
+networks:
+  laravel-net:
+
+
+volumes:
+  mysql-mahasiswa:
+  mysql-nilai:
