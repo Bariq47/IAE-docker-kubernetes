@@ -46,6 +46,8 @@ spec:
               value: redis
             - name: REDIS_PORT
               value: "6379"
+            - name: NILAI_SERVICE_URL
+              value: http://nilaiservice:9071
           image: bariq47/mahasiswaservice:latest
           name: laravel-mahasiswaservice
           ports:
